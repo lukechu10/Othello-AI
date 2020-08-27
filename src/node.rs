@@ -1,19 +1,10 @@
-use crate::Game;
-use crate::Play;
-use crate::Player;
+use crate::othello::{Game, Play, Player};
 use rand::prelude::*;
 
 const C_PARAM: f32 = 1.41; // sqrt(2)
 
-pub enum NodeChild {
-    Node(usize),
-    Play(Play),
-}
-
 /// Represents a node in the MCTS Tree.
 pub struct Node {
-    /// The index in the `MCTSTree.arena`.
-    index: usize,
     /// The index of the parent node in the `MCTSTree.arena`.
     parent: Option<usize>,
     /// The indexes of child nodes in the `MCTSTree.arena`.
@@ -30,14 +21,13 @@ pub struct Node {
 
 impl Node {
     /// Creates a new `Node` with the specified `Game` state. `children` is generated automatically from `state`.
-    pub fn new(index: usize, state: Game, parent: Option<usize>) -> Self {
+    pub fn new(state: Game, parent: Option<usize>) -> Self {
         let mut plays = state.generate_plays();
 
         // shuffle plays
         plays.shuffle(&mut thread_rng());
 
         Self {
-            index,
             parent,
             children: Vec::new(),
             unexpanded_moves: plays,
@@ -70,7 +60,7 @@ pub struct Mcts {
 impl Mcts {
     pub fn new(state: Game) -> Self {
         let mut arena: Vec<Node> = Vec::new();
-        let node = Node::new(0, state, None);
+        let node = Node::new(state, None);
         arena.push(node);
 
         return Mcts {
@@ -86,7 +76,7 @@ impl Mcts {
     /// Returns the index of the newly added `Node`.
     fn add_node(&mut self, parent: usize, state: Game) -> usize {
         let index = self.arena.len();
-        let node = Node::new(index, state, Some(parent)); // root node does not have parent
+        let node = Node::new(state, Some(parent)); // root node does not have parent
         self.arena.push(node);
 
         return index; // index of added node
@@ -156,16 +146,13 @@ impl Mcts {
     /// # Panics
     /// This method panics if there are no more moves left to expand for the specified node.
     fn expand(&mut self, index: usize) -> usize {
-        let new_index = self.arena.len();
         let last_move = self.get_node_mut(index).unexpanded_moves.pop();
 
         if let Some(play) = last_move {
             let new_node_index = self.arena.len();
 
             let new_state = Self::advance_state(&self.arena[index].state, play); // create new state from play
-            let new_node = Node::new(new_node_index, new_state, Some(index)); // create new Node
-
-            self.arena.push(new_node); // add new node to self.arena
+            self.add_node(index, new_state); // create new Node
             self.get_node_mut(index).children.push(new_node_index);
 
             return new_node_index;

@@ -1,19 +1,13 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 mod node;
 mod othello;
 
-use node::Mcts;
-use othello::game::{Game, Player};
-use othello::play::Play;
-use rand::{thread_rng, Rng};
-
 fn main() {
+    use node::Mcts;
+    use othello::{Game, Player};
+    use rand::{thread_rng, Rng};
+
     println!("Hello, world!");
     let mut game = Game::new();
-    // println!("{}", game);
-    // println!("{:?}", game.generate_plays());
 
     println!("{}", game);
     while game.game_state() == Player::InProgress {
