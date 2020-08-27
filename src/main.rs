@@ -20,7 +20,7 @@ fn main() {
         let play = if game.player_to_move == Player::Black {
             // mcts ai
             let mut mcts_agent = Mcts::new(game.clone());
-            mcts_agent.run_search();
+            mcts_agent.run_search(100);
 
             mcts_agent.best_play()
         } else {

@@ -221,10 +221,16 @@ impl Mcts {
         }
     }
 
-    pub fn run_search(&mut self) {
-        let iterations_count: u32 = 0;
+    /// Runs Monte Carlo Tree Search
+    /// # Arguments
+    /// * `time_budget` - the time budget for running the search in `ms`.
+    pub fn run_search(&mut self, time_budget: u128) {
+        use std::time::{Duration, Instant};
 
-        for i in 0..1000 {
+        let iterations_count: u32 = 0;
+        let time_start = Instant::now();
+
+        loop {
             let node_index = self.select(); // step 1
             if self.get_node(node_index).is_fully_expanded() {
                 // step 2 skip
@@ -234,6 +240,11 @@ impl Mcts {
                 let expanded_index = self.expand(node_index); // step 2
                 let winner = self.simulate(expanded_index); // step 3
                 self.backpropagate(expanded_index, winner); // step 4
+            }
+
+            let duration: Duration = time_start.elapsed();
+            if duration.as_millis() > time_budget {
+                break;
             }
         }
     }

@@ -124,6 +124,7 @@ impl Game {
         let mut bitfield: BitField = self.generate_plays_bitfield();
 
         let mut vec = Vec::new();
+        vec.reserve(20);
         let mut index: u8 = 0;
 
         while bitfield != 0 {
