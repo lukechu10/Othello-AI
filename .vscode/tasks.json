@@ -2,8 +2,11 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "cargo",
-			"subcommand": "build",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"build"
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -11,7 +14,15 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"label": "Rust: cargo build - Othello-AI"
+			"label": "Rust: cargo build - Othello-AI",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
 		}
 	]
 }

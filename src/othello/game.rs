@@ -3,13 +3,6 @@ use crate::othello::play::{new_play, Play};
 /// Alias for `u64`. A `BitField` is used for black locations and another for white locations.
 type BitField = u64;
 
-/// Represents a player.
-#[derive(Debug, PartialEq)]
-pub enum Player {
-    Black,
-    White,
-}
-
 /// Represents the state of a cell
 #[derive(Debug, PartialEq)]
 pub enum Cell {
@@ -18,24 +11,36 @@ pub enum Cell {
     White,
 }
 
+/// Represents the current state of the game.
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[repr(i32)]
+pub enum Player {
+    Black,
+    White,
+    InProgress,
+    Tie,
+}
+
 /// Represents an Othello game board.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Game {
     pub black_pieces: BitField,
     pub white_pieces: BitField,
 
     /// Next player to move
-    player_to_move: Player,
+    pub player_to_move: Player,
+    pub previous_move: Play,
 }
 
 impl Game {
     /// Creates a new blank game board.
     pub fn new() -> Self {
-        return Self {
+        Self {
             black_pieces: (1 << new_play(3, 3)) | (1 << new_play(4, 4)),
             white_pieces: (1 << new_play(3, 4)) | (1 << new_play(4, 3)),
             player_to_move: Player::Black,
-        };
+            previous_move: 0,
+        }
     }
 
     /// Shifts `disks` in the specified `Direction`.
@@ -112,26 +117,30 @@ impl Game {
         return legal_moves;
     }
 
+    /// Returns a `Vec<Play>` of legal plays.
+    /// # Postcondition
+    /// The returned vector always has a least 1 play. If there are no plays available, the method returns the "skip" play (represented by 64).
     pub fn generate_plays(&self) -> Vec<Play> {
         let mut bitfield: BitField = self.generate_plays_bitfield();
 
-        let mut v = Vec::new();
+        let mut vec = Vec::new();
         let mut index: u8 = 0;
 
         while bitfield != 0 {
             if bitfield % 2 == 1 {
-                v.push(index);
+                vec.push(index);
             }
             bitfield >>= 1;
             index += 1;
         }
 
-        v
-    }
+        if vec.len() == 0 {
+            // add "skip" Play
+            vec.push(64); // overflow
+        }
 
-    /// Checks if `self.player_to_move` has any valid moves this turn.
-    pub fn has_valid_plays(&self) -> bool {
-        self.generate_plays_bitfield() != 0
+        debug_assert!(vec.len() > 0);
+        return vec;
     }
 
     // pub fn is_valid_move(&self) {}
@@ -150,10 +159,14 @@ impl Game {
 
         let mut x: u64;
 
-        let new_disk: u64 = 1 << play; // shift 1 to correct index
+        let new_disk: u64 = if play == 64 {
+            0 // error to overflow completely
+        } else {
+            1 << play // shift 1 to correct index
+        };
         let mut captured_disks: u64 = 0;
 
-        debug_assert!(play < 64, "Move must be within the board.");
+        debug_assert!(play < 65, "Move must be within the board."); // 64 is "skip" turn
         debug_assert!(
             *my_disks & *opponent_disks == 0,
             "Disk sets must be disjoint."
@@ -181,8 +194,6 @@ impl Game {
             captured_disks |= if bounding_disk != 0 { x } else { 0 }; // do nothing if bounding_disk == 0
         }
 
-        debug_assert!(captured_disks != 0, "A valid move must capture disks.");
-
         // mutate board with captured_disks
         *my_disks ^= captured_disks;
         *opponent_disks ^= captured_disks;
@@ -196,14 +207,16 @@ impl Game {
 
         debug_assert!(
             (*my_disks & *opponent_disks) == 0,
-            "The sets must still be disjoint"
+            "Disk sets must still be disjoint"
         );
     }
 
     /// Makes sure `play` is a valid `Play` and mutates the board.
     pub fn make_play(&mut self, play: Play) {
+        // TODO: make sure play is valid
         // debug_assert!
         self.resolve_play(play);
+        self.previous_move = play;
     }
 
     /// Returns the `Cell` state with the specified `row` and `col`.
@@ -216,6 +229,25 @@ impl Game {
             return Cell::White;
         } else {
             return Cell::Empty;
+        }
+    }
+
+    /// Computes the game state.
+    pub fn game_state(&self) -> Player {
+        if !(self.black_pieces | self.white_pieces) != 0 {
+            return Player::InProgress;
+        } else {
+            // count number of pieces of each color
+            let black_count = self.black_pieces.count_ones();
+            let white_count = self.white_pieces.count_ones();
+
+            if black_count > white_count {
+                return Player::Black;
+            } else if white_count > black_count {
+                return Player::White;
+            } else {
+                return Player::Tie;
+            }
         }
     }
 }
