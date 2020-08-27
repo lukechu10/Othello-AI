@@ -1,8 +1,8 @@
-mod node;
+mod mcts;
 mod othello;
 
 fn main() {
-    use node::Mcts;
+    use mcts::Mcts;
     use othello::{Game, Player};
     use rand::{thread_rng, Rng};
 

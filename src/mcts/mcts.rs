@@ -1,50 +1,8 @@
+use crate::mcts::Node;
 use crate::othello::{Game, Play, Player};
-use rand::prelude::*;
+use rand::{thread_rng, Rng};
 
 const C_PARAM: f32 = 1.41; // sqrt(2)
-
-/// Represents a node in the MCTS Tree.
-pub struct Node {
-    /// The index of the parent node in the `MCTSTree.arena`.
-    parent: Option<usize>,
-    /// The indexes of child nodes in the `MCTSTree.arena`.
-    children: Vec<usize>,
-    /// Vector of unexpanded moves.
-    unexpanded_moves: Vec<Play>,
-
-    // mcts members
-    wins: f32,
-    visits: u32,
-
-    state: Game,
-}
-
-impl Node {
-    /// Creates a new `Node` with the specified `Game` state. `children` is generated automatically from `state`.
-    pub fn new(state: Game, parent: Option<usize>) -> Self {
-        let mut plays = state.generate_plays();
-
-        // shuffle plays
-        plays.shuffle(&mut thread_rng());
-
-        Self {
-            parent,
-            children: Vec::new(),
-            unexpanded_moves: plays,
-            wins: 0.0,
-            visits: 0,
-            state,
-        }
-    }
-
-    pub fn is_terminal(&self) -> bool {
-        self.state.game_state() != Player::InProgress
-    }
-
-    pub fn is_fully_expanded(&self) -> bool {
-        self.unexpanded_moves.len() == 0
-    }
-}
 
 pub struct MctsSearchResult {
     pub search_iterations: u32,
