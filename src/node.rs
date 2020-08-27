@@ -56,6 +56,10 @@ impl Node {
     }
 }
 
+pub struct MctsSearchResult {
+    pub search_iterations: u32,
+}
+
 /// Represents a MCTS Tree. Owns all the nodes in the tree.
 pub struct Mcts {
     arena: Vec<Node>,
@@ -224,10 +228,10 @@ impl Mcts {
     /// Runs Monte Carlo Tree Search
     /// # Arguments
     /// * `time_budget` - the time budget for running the search in `ms`.
-    pub fn run_search(&mut self, time_budget: u128) {
+    pub fn run_search(&mut self, time_budget: u128) -> MctsSearchResult {
         use std::time::{Duration, Instant};
 
-        let iterations_count: u32 = 0;
+        let mut iterations_count: u32 = 0;
         let time_start = Instant::now();
 
         loop {
@@ -242,11 +246,17 @@ impl Mcts {
                 self.backpropagate(expanded_index, winner); // step 4
             }
 
+            iterations_count += 1;
+
             let duration: Duration = time_start.elapsed();
             if duration.as_millis() > time_budget {
                 break;
             }
         }
+
+        return MctsSearchResult {
+            search_iterations: iterations_count,
+        };
     }
 
     pub fn best_play(&self) -> Play {
