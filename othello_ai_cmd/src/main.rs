@@ -1,9 +1,6 @@
-mod mcts;
-mod othello;
-
 fn main() {
-    use mcts::Mcts;
-    use othello::{Game, Player};
+    use othello_ai::mcts::*;
+    use othello_ai::othello::*;
     use rand::{thread_rng, Rng};
 
     println!("Hello, world!");
