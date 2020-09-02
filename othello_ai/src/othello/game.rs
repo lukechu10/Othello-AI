@@ -220,6 +220,14 @@ impl Game {
         self.previous_move = play;
     }
 
+    pub fn is_valid_play(&self, play: Play) -> bool {
+        let plays = self.generate_plays_bitfield();
+
+        let mask = 1 << play;
+
+        plays & mask != 0
+    }
+
     /// Returns the `Cell` state with the specified `row` and `col`.
     pub fn cell_state(&self, row: u8, col: u8) -> Cell {
         let mask: u64 = 1 << new_play(row, col);
