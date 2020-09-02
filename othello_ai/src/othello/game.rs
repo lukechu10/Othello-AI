@@ -91,9 +91,8 @@ impl Game {
         let empty_cells: BitField = !(my_disks | opponent_disks); // opposite of union of my_disks and opponent_disks
         let mut legal_moves: BitField = 0; // initially has no moves
 
-        assert_eq!(
-            self.black_pieces & self.white_pieces,
-            0,
+        debug_assert!(
+            self.black_pieces & self.white_pieces == 0,
             "Disk sets should be disjoint."
         );
 
@@ -113,6 +112,8 @@ impl Game {
             // empty cells adjacent to those are legal moves
             legal_moves |= Self::shift(&x, dir) & empty_cells;
         }
+
+        debug_assert!(legal_moves & (self.black_pieces | self.white_pieces) == 0, "Legal moves should not be on black or white pieces.");
 
         return legal_moves;
     }
