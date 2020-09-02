@@ -54,9 +54,9 @@ impl Game {
             0xFFFFFFFFFFFFFFFF, // Direction::Down
             0x00FEFEFEFEFEFEFE, // Direction::DownLeft
             0xFEFEFEFEFEFEFEFE, // Direction::Left
-            0xFEFEFEFEFEFEFE0E, // Direction::UpLeft
+            0xFEFEFEFEFEFEFE00, // Direction::UpLeft
             0xFFFFFFFFFFFFFFFF, // Direction::Up
-            0x7F7F7F7F7F7F7F0F, // Direction::UpRight
+            0x7F7F7F7F7F7F7F00, // Direction::UpRight
         ];
 
         const LSHIFTS: [u64; 8] = [0, 0, 0, 0, 1, 9, 8, 7];
