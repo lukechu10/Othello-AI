@@ -1,5 +1,6 @@
 # Othello-AI
 An Othello / Reversi AI using Monte Carlo Tree Search algorithm.
+This repo does not include any playable examples. To play against the AI, check out this repo: [lukechu10/Othello-GUI](https://github.com/lukechu10/Othello-GUI).
 
 ## Build Instructions
 ### Requirements
