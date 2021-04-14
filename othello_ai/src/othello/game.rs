@@ -66,11 +66,11 @@ impl Game {
         if dir < 4 {
             // shift right
             debug_assert!(LSHIFTS[dir_size] == 0, "Shifting right.");
-            return (disks >> RSHIFTS[dir_size]) & MASKS[dir_size];
+            (disks >> RSHIFTS[dir_size]) & MASKS[dir_size]
         } else {
             // shift left
             debug_assert!(RSHIFTS[dir_size] == 0, "Shifting left.");
-            return (disks << LSHIFTS[dir_size]) & MASKS[dir_size];
+            (disks << LSHIFTS[dir_size]) & MASKS[dir_size]
         }
     }
 
@@ -113,9 +113,12 @@ impl Game {
             legal_moves |= Self::shift(&x, dir) & empty_cells;
         }
 
-        debug_assert!(legal_moves & (self.black_pieces | self.white_pieces) == 0, "Legal moves should not be on black or white pieces.");
+        debug_assert!(
+            legal_moves & (self.black_pieces | self.white_pieces) == 0,
+            "Legal moves should not be on black or white pieces."
+        );
 
-        return legal_moves;
+        legal_moves
     }
 
     /// Returns a `Vec<Play>` of legal plays.
@@ -136,13 +139,13 @@ impl Game {
             index += 1;
         }
 
-        if vec.len() == 0 {
+        if vec.is_empty() {
             // add "skip" Play
             vec.push(64); // overflow
         }
 
-        debug_assert!(vec.len() > 0);
-        return vec;
+        debug_assert!(!vec.is_empty());
+        vec
     }
 
     // pub fn is_valid_move(&self) {}
@@ -234,34 +237,39 @@ impl Game {
         let mask: u64 = 1 << new_play(row, col);
 
         if self.black_pieces & mask != 0 {
-            return Cell::Black;
+            Cell::Black
         } else if self.white_pieces & mask != 0 {
-            return Cell::White;
+            Cell::White
         } else {
-            return Cell::Empty;
+            Cell::Empty
         }
     }
 
     /// Computes the game state.
     pub fn game_state(&self) -> Player {
         if !(self.black_pieces | self.white_pieces) != 0 {
-            return Player::InProgress;
+            Player::InProgress
         } else {
             // count number of pieces of each color
             let black_count = self.black_pieces.count_ones();
             let white_count = self.white_pieces.count_ones();
 
-            if black_count > white_count {
-                return Player::Black;
-            } else if white_count > black_count {
-                return Player::White;
-            } else {
-                return Player::Tie;
+            match black_count.cmp(&white_count) {
+                Ordering::Less => Player::White,
+                Ordering::Equal => Player::Tie,
+                Ordering::Greater => Player::Black,
             }
         }
     }
 }
 
+impl Default for Game {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+use std::cmp::Ordering;
 use std::fmt;
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -279,7 +287,7 @@ impl fmt::Display for Game {
             for col in 0..8 {
                 write!(f, "{}", self.cell_state(row, col))?;
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
         }
         Ok(())
     }

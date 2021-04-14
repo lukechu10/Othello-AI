@@ -41,6 +41,6 @@ impl Node {
     }
 
     pub fn is_fully_expanded(&self) -> bool {
-        self.unexpanded_moves.len() == 0
+        self.unexpanded_moves.is_empty()
     }
 }

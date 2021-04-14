@@ -1,8 +1,10 @@
+use std::cmp::Ordering;
+
 use crate::mcts::Node;
 use crate::othello::{Game, Play, Player};
 use rand::{thread_rng, Rng};
 
-const C_PARAM: f32 = 1.41; // sqrt(2)
+const C_PARAM: f32 = 1.41; // f32::sqrt(2)
 
 pub struct MctsSearchResult {
     pub search_iterations: u32,
@@ -21,10 +23,10 @@ impl Mcts {
         let node = Node::new(state, None);
         arena.push(node);
 
-        return Mcts {
+        Mcts {
             arena,
             root_node_index: 0,
-        };
+        }
     }
 
     /// Takes ownership of `node` and adds it to `self.arena`.
@@ -37,7 +39,7 @@ impl Mcts {
         let node = Node::new(state, Some(parent)); // root node does not have parent
         self.arena.push(node);
 
-        return index; // index of added node
+        index
     }
 
     fn get_node(&self, index: usize) -> &Node {
@@ -53,7 +55,7 @@ impl Mcts {
         let mut tmp_state = state.clone();
         tmp_state.make_play(play);
 
-        return tmp_state;
+        tmp_state
     }
 
     /// Returns the best child of the node at `self.arena[index]` according to uct formula or `None` if no `children`.
@@ -74,7 +76,7 @@ impl Mcts {
             }
         }
 
-        return best_index;
+        best_index
     }
 
     /// ### Monte Carlo Tree Search - step 1.
@@ -94,7 +96,7 @@ impl Mcts {
             }
         }
 
-        return node_index;
+        node_index
     }
 
     /// ### Monte Carlo Tree Search - step 2.
@@ -113,7 +115,7 @@ impl Mcts {
             self.add_node(index, new_state); // create new Node
             self.get_node_mut(index).children.push(new_node_index);
 
-            return new_node_index;
+            new_node_index
         } else {
             panic!("No more moves left to expand.");
         }
@@ -128,7 +130,7 @@ impl Mcts {
         while state.game_state() == Player::InProgress {
             let plays = state.generate_plays();
             // select random move
-            let rand_index = rng.gen_range(0, plays.len());
+            let rand_index = rng.gen_range(0..plays.len());
             let play = plays[rand_index];
 
             state.make_play(play);
@@ -140,18 +142,16 @@ impl Mcts {
                     let black_count = state.black_pieces.count_ones();
                     let white_count = state.white_pieces.count_ones();
 
-                    if black_count > white_count {
-                        return Player::Black;
-                    } else if white_count > black_count {
-                        return Player::White;
-                    } else {
-                        return Player::Tie;
-                    }
+                    return match black_count.cmp(&white_count) {
+                        Ordering::Less => Player::White,
+                        Ordering::Equal => Player::Tie,
+                        Ordering::Greater => Player::Black,
+                    };
                 }
             }
         }
 
-        return state.game_state();
+        state.game_state()
     }
 
     /// ### Monte Carlo Tree Search - step 4.
@@ -199,9 +199,9 @@ impl Mcts {
             }
         }
 
-        return MctsSearchResult {
+        MctsSearchResult {
             search_iterations: iterations_count,
-        };
+        }
     }
 
     pub fn best_play(&self) -> Play {
@@ -223,6 +223,6 @@ impl Mcts {
             }
         }
 
-        return best_play;
+        best_play
     }
 }
