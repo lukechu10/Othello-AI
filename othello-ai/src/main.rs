@@ -19,7 +19,7 @@ fn main() {
             // random ai
             let plays = game.generate_plays();
             let mut rng = thread_rng();
-            let rand_index = rng.gen_range(0, plays.len());
+            let rand_index = rng.gen_range(0..plays.len());
 
             plays[rand_index]
         };

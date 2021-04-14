@@ -1,8 +1,7 @@
 [workspace]
 
 members = [
-  "othello_ai",
-  "othello_ai_cmd",
+  "othello-ai",
 ]
 
 [profile.release]
