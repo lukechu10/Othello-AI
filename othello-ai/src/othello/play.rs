@@ -1,14 +1,13 @@
 /// Represents the position on the game board.
-pub type Play = u8;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Play(pub u8);
 
-trait NewPlay {
-    fn new_play(row: u8, col: u8) -> Play;
-}
+impl Play {
+    /// Create a new `Play` with specified `row` and `col`.
+    pub fn new(row: u8, col: u8) -> Self {
+        debug_assert!(row < 8);
+        debug_assert!(col < 8);
 
-/// Create a new `Play` with specified `row` and `col`.
-pub fn new_play(row: u8, col: u8) -> Play {
-    debug_assert!(row < 8);
-    debug_assert!(col < 8);
-
-    row * 8 + col
+        Self(row * 8 + col)
+    }
 }

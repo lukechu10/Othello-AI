@@ -1,8 +1,8 @@
-fn main() {
-    use othello_ai::mcts::*;
-    use othello_ai::othello::*;
-    use rand::{thread_rng, Rng};
+use othello_ai::mcts::*;
+use othello_ai::othello::*;
+use rand::{thread_rng, Rng};
 
+fn main() {
     println!("Hello, world!");
     let mut game = Game::new();
 

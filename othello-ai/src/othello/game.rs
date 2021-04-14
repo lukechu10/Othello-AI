@@ -1,4 +1,6 @@
-use crate::othello::play::{new_play, Play};
+use crate::othello::play::Play;
+use std::cmp::Ordering;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Bitfield(pub u64);
@@ -13,7 +15,6 @@ pub enum Cell {
 
 /// Represents the current state of the game.
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[repr(i32)]
 pub enum Player {
     Black,
     White,
@@ -36,10 +37,10 @@ impl Game {
     /// Creates a new blank game board.
     pub fn new() -> Self {
         Self {
-            black_pieces: Bitfield((1 << new_play(3, 3)) | (1 << new_play(4, 4))),
-            white_pieces: Bitfield((1 << new_play(3, 4)) | (1 << new_play(4, 3))),
+            black_pieces: Bitfield((1 << Play::new(3, 3).0) | (1 << Play::new(4, 4).0)),
+            white_pieces: Bitfield((1 << Play::new(3, 4).0) | (1 << Play::new(4, 3).0)),
             player_to_move: Player::Black,
-            previous_move: 0,
+            previous_move: Play(0),
         }
     }
 
@@ -76,15 +77,11 @@ impl Game {
 
     /// Returns a vector of moves. Generates moves for the player in `self.player_to_move`.
     fn generate_plays_bitfield(&self) -> Bitfield {
-        let my_disks: &Bitfield;
-        let opponent_disks: &Bitfield;
-        if self.player_to_move == Player::Black {
-            my_disks = &self.black_pieces;
-            opponent_disks = &self.white_pieces;
+        let (my_disks, opponent_disks) = if self.player_to_move == Player::Black {
+            (&self.black_pieces, &self.white_pieces)
         } else {
-            my_disks = &self.white_pieces;
-            opponent_disks = &self.black_pieces;
-        }
+            (&self.white_pieces, &self.black_pieces)
+        };
 
         let mut x: Bitfield;
 
@@ -125,15 +122,15 @@ impl Game {
     /// # Postcondition
     /// The returned vector always has a least 1 play. If there are no plays available, the method returns the "skip" play (represented by 64).
     pub fn generate_plays(&self) -> Vec<Play> {
-        let mut bitfield: Bitfield = self.generate_plays_bitfield();
+        let mut bitfield = self.generate_plays_bitfield();
 
         let mut vec = Vec::new();
         vec.reserve(20);
-        let mut index: u8 = 0;
+        let mut index = 0;
 
         while bitfield.0 != 0 {
             if bitfield.0 % 2 == 1 {
-                vec.push(index);
+                vec.push(Play(index));
             }
             bitfield.0 >>= 1;
             index += 1;
@@ -141,7 +138,7 @@ impl Game {
 
         if vec.is_empty() {
             // add "skip" Play
-            vec.push(64); // overflow
+            vec.push(Play(64)); // overflow
         }
 
         debug_assert!(!vec.is_empty());
@@ -150,26 +147,22 @@ impl Game {
 
     /// Modifies game board and flips opponent disks.
     fn resolve_play(&mut self, play: Play) {
-        let my_disks: &mut Bitfield;
-        let opponent_disks: &mut Bitfield;
-        if self.player_to_move == Player::Black {
-            my_disks = &mut self.black_pieces;
-            opponent_disks = &mut self.white_pieces;
+        let (my_disks, opponent_disks) = if self.player_to_move == Player::Black {
+            (&mut self.black_pieces, &mut self.white_pieces)
         } else {
-            my_disks = &mut self.white_pieces;
-            opponent_disks = &mut self.black_pieces;
-        }
+            (&mut self.white_pieces, &mut self.black_pieces)
+        };
 
         let mut x: Bitfield;
 
-        let new_disk = if play == 64 {
+        let new_disk = if play.0 == 64 {
             Bitfield(0) // error to overflow completely
         } else {
-            Bitfield(1 << play)
+            Bitfield(1 << play.0)
         };
         let mut captured_disks: u64 = 0;
 
-        debug_assert!(play < 65, "move must be within the board"); // 64 is "skip" turn
+        debug_assert!(play.0 < 65, "move must be within the board"); // 64 is "skip" turn
         debug_assert!(
             my_disks.0 & opponent_disks.0 == 0,
             "disk sets must be disjoint"
@@ -214,10 +207,8 @@ impl Game {
         );
     }
 
-    /// Makes sure `play` is a valid `Play` and mutates the board.
+    /// Mutates the board.
     pub fn make_play(&mut self, play: Play) {
-        // TODO: make sure play is valid
-        // debug_assert!
         self.resolve_play(play);
         self.previous_move = play;
     }
@@ -225,14 +216,14 @@ impl Game {
     pub fn is_valid_play(&self, play: Play) -> bool {
         let plays = self.generate_plays_bitfield();
 
-        let mask = 1 << play;
+        let mask = 1 << play.0;
 
         plays.0 & mask != 0
     }
 
     /// Returns the `Cell` state with the specified `row` and `col`.
     pub fn cell_state(&self, row: u8, col: u8) -> Cell {
-        let mask: u64 = 1 << new_play(row, col);
+        let mask = 1 << Play::new(row, col).0;
 
         if self.black_pieces.0 & mask != 0 {
             Cell::Black
@@ -267,8 +258,6 @@ impl Default for Game {
     }
 }
 
-use std::cmp::Ordering;
-use std::fmt;
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

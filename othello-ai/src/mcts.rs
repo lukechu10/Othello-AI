@@ -1,6 +1,7 @@
 use crate::othello::{Game, Play, Player};
 use rand::prelude::*;
 use std::cmp::Ordering;
+use std::time::Instant;
 
 /// Represents a node in the MCTS Tree.
 pub struct Node {
@@ -60,7 +61,7 @@ pub struct Mcts {
 
 impl Mcts {
     pub fn new(state: Game) -> Self {
-        let mut arena: Vec<Node> = Vec::new();
+        let mut arena = Vec::new();
         let node = Node::new(state, None);
         arena.push(node);
 
@@ -101,14 +102,14 @@ impl Mcts {
 
     /// Returns the best child of the node at `self.arena[index]` according to uct formula or `None` if no `children`.
     fn select_best_child_uct(&self, index: usize) -> Option<usize> {
-        let mut best_index: Option<usize> = None;
+        let mut best_index = None;
         let mut best_score = f32::MIN;
 
         let node = self.get_node(index);
 
         for child_index in &node.children {
             let child = self.get_node(*child_index);
-            let score: f32 = (child.wins / child.visits as f32)
+            let score = (child.wins / child.visits as f32)
                 + (C_PARAM * child.wins.log2().sqrt() / child.visits as f32);
 
             if score > best_score {
@@ -176,9 +177,9 @@ impl Mcts {
 
             state.make_play(play);
 
-            if play == 64 {
+            if play.0 == 64 {
                 // check if other player has a move, if false, return Player::Tie
-                if state.generate_plays()[0] == 64 {
+                if state.generate_plays()[0].0 == 64 {
                     // count number of pieces of each color
                     let black_count = state.black_pieces.0.count_ones();
                     let white_count = state.white_pieces.0.count_ones();
@@ -215,9 +216,7 @@ impl Mcts {
     /// # Arguments
     /// * `time_budget` - the time budget for running the search in `ms`.
     pub fn run_search(&mut self, time_budget: u128) -> MctsSearchResult {
-        use std::time::{Duration, Instant};
-
-        let mut iterations_count: u32 = 0;
+        let mut iterations_count = 0;
         let time_start = Instant::now();
 
         loop {
@@ -234,7 +233,7 @@ impl Mcts {
 
             iterations_count += 1;
 
-            let duration: Duration = time_start.elapsed();
+            let duration = time_start.elapsed();
             if duration.as_millis() > time_budget {
                 break;
             }
@@ -252,8 +251,8 @@ impl Mcts {
             panic!("Root is not fully expanded.");
         }
 
-        let mut best_visits: u32 = 0;
-        let mut best_play: Play = 0;
+        let mut best_visits = 0;
+        let mut best_play = Play(0);
 
         for child_index in &root_node.children {
             let child = self.get_node(*child_index);
