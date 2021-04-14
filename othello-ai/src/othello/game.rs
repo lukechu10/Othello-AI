@@ -1,7 +1,7 @@
 use crate::othello::play::{new_play, Play};
 
-/// Alias for `u64`. A `BitField` is used for black locations and another for white locations.
-type BitField = u64;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Bitfield(pub u64);
 
 /// Represents the state of a cell
 #[derive(Debug, PartialEq)]
@@ -24,8 +24,8 @@ pub enum Player {
 /// Represents an Othello game board.
 #[derive(Debug, Clone)]
 pub struct Game {
-    pub black_pieces: BitField,
-    pub white_pieces: BitField,
+    pub black_pieces: Bitfield,
+    pub white_pieces: Bitfield,
 
     /// Next player to move
     pub player_to_move: Player,
@@ -36,8 +36,8 @@ impl Game {
     /// Creates a new blank game board.
     pub fn new() -> Self {
         Self {
-            black_pieces: (1 << new_play(3, 3)) | (1 << new_play(4, 4)),
-            white_pieces: (1 << new_play(3, 4)) | (1 << new_play(4, 3)),
+            black_pieces: Bitfield((1 << new_play(3, 3)) | (1 << new_play(4, 4))),
+            white_pieces: Bitfield((1 << new_play(3, 4)) | (1 << new_play(4, 3))),
             player_to_move: Player::Black,
             previous_move: 0,
         }
@@ -47,7 +47,7 @@ impl Game {
     /// # Arguments
     /// * `disks` - The `BitField` to shift
     /// * `dir` - The `Direction` to shift the `BitField`
-    fn shift(disks: &BitField, dir: u8) -> BitField {
+    fn shift(disks: &Bitfield, dir: u8) -> Bitfield {
         const MASKS: [u64; 8] = [
             0x7F7F7F7F7F7F7F7F, // Direction::Right
             0x007F7F7F7F7F7F7F, // Direction::DownRight
@@ -66,18 +66,18 @@ impl Game {
         if dir < 4 {
             // shift right
             debug_assert!(LSHIFTS[dir_size] == 0, "Shifting right.");
-            (disks >> RSHIFTS[dir_size]) & MASKS[dir_size]
+            Bitfield((disks.0 >> RSHIFTS[dir_size]) & MASKS[dir_size])
         } else {
             // shift left
             debug_assert!(RSHIFTS[dir_size] == 0, "Shifting left.");
-            (disks << LSHIFTS[dir_size]) & MASKS[dir_size]
+            Bitfield((disks.0 << LSHIFTS[dir_size]) & MASKS[dir_size])
         }
     }
 
     /// Returns a vector of moves. Generates moves for the player in `self.player_to_move`.
-    fn generate_plays_bitfield(&self) -> BitField {
-        let my_disks: &BitField;
-        let opponent_disks: &BitField;
+    fn generate_plays_bitfield(&self) -> Bitfield {
+        let my_disks: &Bitfield;
+        let opponent_disks: &Bitfield;
         if self.player_to_move == Player::Black {
             my_disks = &self.black_pieces;
             opponent_disks = &self.white_pieces;
@@ -86,56 +86,56 @@ impl Game {
             opponent_disks = &self.black_pieces;
         }
 
-        let mut x: BitField;
+        let mut x: Bitfield;
 
-        let empty_cells: BitField = !(my_disks | opponent_disks); // opposite of union of my_disks and opponent_disks
-        let mut legal_moves: BitField = 0; // initially has no moves
+        let empty_cells = !(my_disks.0 | opponent_disks.0); // opposite of union of my_disks and opponent_disks
+        let mut legal_moves = 0; // initially has no moves
 
         debug_assert!(
-            self.black_pieces & self.white_pieces == 0,
-            "Disk sets should be disjoint."
+            self.black_pieces.0 & self.white_pieces.0 == 0,
+            "disk sets should be disjoint"
         );
 
         for dir in 0..8 {
             // perform 7 shifts in each direction and follow connected disks
 
             // get adjacent opponent disks
-            x = Self::shift(my_disks, dir) & opponent_disks;
+            x = Bitfield(Self::shift(my_disks, dir).0 & opponent_disks.0);
 
             // add opponent disks adjacent to those
-            x |= Self::shift(&x, dir) & opponent_disks;
-            x |= Self::shift(&x, dir) & opponent_disks;
-            x |= Self::shift(&x, dir) & opponent_disks;
-            x |= Self::shift(&x, dir) & opponent_disks;
-            x |= Self::shift(&x, dir) & opponent_disks;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
 
             // empty cells adjacent to those are legal moves
-            legal_moves |= Self::shift(&x, dir) & empty_cells;
+            legal_moves |= Self::shift(&x, dir).0 & empty_cells;
         }
 
         debug_assert!(
-            legal_moves & (self.black_pieces | self.white_pieces) == 0,
+            legal_moves & (self.black_pieces.0 | self.white_pieces.0) == 0,
             "Legal moves should not be on black or white pieces."
         );
 
-        legal_moves
+        Bitfield(legal_moves)
     }
 
     /// Returns a `Vec<Play>` of legal plays.
     /// # Postcondition
     /// The returned vector always has a least 1 play. If there are no plays available, the method returns the "skip" play (represented by 64).
     pub fn generate_plays(&self) -> Vec<Play> {
-        let mut bitfield: BitField = self.generate_plays_bitfield();
+        let mut bitfield: Bitfield = self.generate_plays_bitfield();
 
         let mut vec = Vec::new();
         vec.reserve(20);
         let mut index: u8 = 0;
 
-        while bitfield != 0 {
-            if bitfield % 2 == 1 {
+        while bitfield.0 != 0 {
+            if bitfield.0 % 2 == 1 {
                 vec.push(index);
             }
-            bitfield >>= 1;
+            bitfield.0 >>= 1;
             index += 1;
         }
 
@@ -148,12 +148,10 @@ impl Game {
         vec
     }
 
-    // pub fn is_valid_move(&self) {}
-
     /// Modifies game board and flips opponent disks.
     fn resolve_play(&mut self, play: Play) {
-        let my_disks: &mut BitField;
-        let opponent_disks: &mut BitField;
+        let my_disks: &mut Bitfield;
+        let opponent_disks: &mut Bitfield;
         if self.player_to_move == Player::Black {
             my_disks = &mut self.black_pieces;
             opponent_disks = &mut self.white_pieces;
@@ -162,46 +160,46 @@ impl Game {
             opponent_disks = &mut self.black_pieces;
         }
 
-        let mut x: u64;
+        let mut x: Bitfield;
 
-        let new_disk: u64 = if play == 64 {
-            0 // error to overflow completely
+        let new_disk = if play == 64 {
+            Bitfield(0) // error to overflow completely
         } else {
-            1 << play // shift 1 to correct index
+            Bitfield(1 << play)
         };
         let mut captured_disks: u64 = 0;
 
-        debug_assert!(play < 65, "Move must be within the board."); // 64 is "skip" turn
+        debug_assert!(play < 65, "move must be within the board"); // 64 is "skip" turn
         debug_assert!(
-            *my_disks & *opponent_disks == 0,
-            "Disk sets must be disjoint."
+            my_disks.0 & opponent_disks.0 == 0,
+            "disk sets must be disjoint"
         );
         debug_assert!(
-            (*my_disks | *opponent_disks) & new_disk == 0,
-            "Target must be empty."
+            (my_disks.0 | opponent_disks.0) & new_disk.0 == 0,
+            "target must be empty"
         );
 
-        *my_disks |= new_disk; // mutate my_disks
+        my_disks.0 |= new_disk.0; // mutate my_disks
 
         // flip opponent_disks
         for dir in 0..8 {
             // find opponent disk adjacent to new_disk
-            x = Self::shift(&new_disk, dir) & *opponent_disks;
+            x = Bitfield(Self::shift(&new_disk, dir).0 & opponent_disks.0);
             // follow adjacent disks
-            x |= Self::shift(&x, dir) & *opponent_disks;
-            x |= Self::shift(&x, dir) & *opponent_disks;
-            x |= Self::shift(&x, dir) & *opponent_disks;
-            x |= Self::shift(&x, dir) & *opponent_disks;
-            x |= Self::shift(&x, dir) & *opponent_disks;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
 
             // determine whether the disks were captured
-            let bounding_disk = Self::shift(&x, dir) & *my_disks;
-            captured_disks |= if bounding_disk != 0 { x } else { 0 }; // do nothing if bounding_disk == 0
+            let bounding_disk = Self::shift(&x, dir).0 & my_disks.0;
+            captured_disks |= if bounding_disk != 0 { x.0 } else { 0 }; // do nothing if bounding_disk == 0
         }
 
         // mutate board with captured_disks
-        *my_disks ^= captured_disks;
-        *opponent_disks ^= captured_disks;
+        my_disks.0 ^= captured_disks;
+        opponent_disks.0 ^= captured_disks;
 
         // flip player_to_move
         self.player_to_move = if self.player_to_move == Player::Black {
@@ -211,8 +209,8 @@ impl Game {
         };
 
         debug_assert!(
-            (*my_disks & *opponent_disks) == 0,
-            "Disk sets must still be disjoint"
+            (my_disks.0 & opponent_disks.0) == 0,
+            "disk sets must still be disjoint"
         );
     }
 
@@ -229,16 +227,16 @@ impl Game {
 
         let mask = 1 << play;
 
-        plays & mask != 0
+        plays.0 & mask != 0
     }
 
     /// Returns the `Cell` state with the specified `row` and `col`.
     pub fn cell_state(&self, row: u8, col: u8) -> Cell {
         let mask: u64 = 1 << new_play(row, col);
 
-        if self.black_pieces & mask != 0 {
+        if self.black_pieces.0 & mask != 0 {
             Cell::Black
-        } else if self.white_pieces & mask != 0 {
+        } else if self.white_pieces.0 & mask != 0 {
             Cell::White
         } else {
             Cell::Empty
@@ -247,12 +245,12 @@ impl Game {
 
     /// Computes the game state.
     pub fn game_state(&self) -> Player {
-        if !(self.black_pieces | self.white_pieces) != 0 {
+        if !(self.black_pieces.0 | self.white_pieces.0) != 0 {
             Player::InProgress
         } else {
             // count number of pieces of each color
-            let black_count = self.black_pieces.count_ones();
-            let white_count = self.white_pieces.count_ones();
+            let black_count = self.black_pieces.0.count_ones();
+            let white_count = self.white_pieces.0.count_ones();
 
             match black_count.cmp(&white_count) {
                 Ordering::Less => Player::White,
