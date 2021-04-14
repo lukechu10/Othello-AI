@@ -48,7 +48,7 @@ impl Game {
     /// # Arguments
     /// * `disks` - The `BitField` to shift
     /// * `dir` - The `Direction` to shift the `BitField`
-    fn shift(disks: &Bitfield, dir: u8) -> Bitfield {
+    fn shift(disks: Bitfield, dir: u8) -> Bitfield {
         const MASKS: [u64; 8] = [
             0x7F7F7F7F7F7F7F7F, // Direction::Right
             0x007F7F7F7F7F7F7F, // Direction::DownRight
@@ -78,9 +78,9 @@ impl Game {
     /// Returns a vector of moves. Generates moves for the player in `self.player_to_move`.
     fn generate_plays_bitfield(&self) -> Bitfield {
         let (my_disks, opponent_disks) = if self.player_to_move == Player::Black {
-            (&self.black_pieces, &self.white_pieces)
+            (self.black_pieces, self.white_pieces)
         } else {
-            (&self.white_pieces, &self.black_pieces)
+            (self.white_pieces, self.black_pieces)
         };
 
         let mut x: Bitfield;
@@ -100,14 +100,14 @@ impl Game {
             x = Bitfield(Self::shift(my_disks, dir).0 & opponent_disks.0);
 
             // add opponent disks adjacent to those
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
 
             // empty cells adjacent to those are legal moves
-            legal_moves |= Self::shift(&x, dir).0 & empty_cells;
+            legal_moves |= Self::shift(x, dir).0 & empty_cells;
         }
 
         debug_assert!(
@@ -177,16 +177,16 @@ impl Game {
         // flip opponent_disks
         for dir in 0..8 {
             // find opponent disk adjacent to new_disk
-            x = Bitfield(Self::shift(&new_disk, dir).0 & opponent_disks.0);
+            x = Bitfield(Self::shift(new_disk, dir).0 & opponent_disks.0);
             // follow adjacent disks
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
-            x.0 |= Self::shift(&x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
+            x.0 |= Self::shift(x, dir).0 & opponent_disks.0;
 
             // determine whether the disks were captured
-            let bounding_disk = Self::shift(&x, dir).0 & my_disks.0;
+            let bounding_disk = Self::shift(x, dir).0 & my_disks.0;
             captured_disks |= if bounding_disk != 0 { x.0 } else { 0 }; // do nothing if bounding_disk == 0
         }
 
