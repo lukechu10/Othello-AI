@@ -63,15 +63,15 @@ impl Game {
         const LSHIFTS: [u64; 8] = [0, 0, 0, 0, 1, 9, 8, 7];
         const RSHIFTS: [u64; 8] = [1, 9, 8, 7, 0, 0, 0, 0];
 
-        let dir_size = dir as usize;
+        let dir = dir as usize;
         if dir < 4 {
             // shift right
-            debug_assert!(LSHIFTS[dir_size] == 0, "Shifting right.");
-            Bitfield((disks.0 >> RSHIFTS[dir_size]) & MASKS[dir_size])
+            debug_assert!(LSHIFTS[dir] == 0, "shifting right");
+            Bitfield((disks.0 >> RSHIFTS[dir]) & MASKS[dir])
         } else {
             // shift left
-            debug_assert!(RSHIFTS[dir_size] == 0, "Shifting left.");
-            Bitfield((disks.0 << LSHIFTS[dir_size]) & MASKS[dir_size])
+            debug_assert!(RSHIFTS[dir] == 0, "shifting left");
+            Bitfield((disks.0 << LSHIFTS[dir]) & MASKS[dir])
         }
     }
 
@@ -112,7 +112,7 @@ impl Game {
 
         debug_assert!(
             legal_moves & (self.black_pieces.0 | self.white_pieces.0) == 0,
-            "Legal moves should not be on black or white pieces."
+            "legal moves should not be on black or white pieces"
         );
 
         Bitfield(legal_moves)

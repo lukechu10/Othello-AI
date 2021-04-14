@@ -11,8 +11,8 @@ fn main() {
         let play = if game.player_to_move == Player::Black {
             // mcts ai
             let mut mcts_agent = Mcts::new(game.clone());
-            let search_res = mcts_agent.run_search(100);
-            println!("{} games simulated.", search_res.search_iterations);
+            let search_res = mcts_agent.run_search(1);
+            println!("{} games simulated", search_res.search_iterations);
 
             mcts_agent.best_play()
         } else {

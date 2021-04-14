@@ -46,7 +46,7 @@ impl Node {
     }
 }
 
-const C_PARAM: f32 = 1.41; // f32::sqrt(2)
+const C_PARAM: f32 = std::f32::consts::SQRT_2;
 
 pub struct MctsSearchResult {
     pub search_iterations: u32,
@@ -248,7 +248,7 @@ impl Mcts {
         let root_node = self.get_node(self.root_node_index);
 
         if !root_node.is_fully_expanded() {
-            panic!("Root is not fully expanded.");
+            panic!("root is not fully expanded");
         }
 
         let mut best_visits = 0;
